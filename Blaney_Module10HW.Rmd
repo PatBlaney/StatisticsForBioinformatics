@@ -1,0 +1,148 @@
+---
+title: "Blaney_Module10HW"
+author: "Patrick Blaney"
+date: "March 26, 2019"
+output: pdf_document
+---
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE, message=FALSE}
+library('ArrayExpress')
+library('affy')
+getAE('E-MEXP-1551', path = 'yeast/', type = 'full')
+yeast.raw <- ReadAffy(celfile.path = 'yeast/')
+yeast.bgc.norm.pmc <- expresso(yeast.raw,
+                               bgcorrect.method = 'mas',
+                               normalize.method = 'quantiles',
+                               pmcorrect.method = 'pmonly',
+                               summary.method = 'medianpolish'
+                               )
+```
+
+# (b)
+```{r, echo=FALSE}
+yeast.exprs <- exprs(yeast.bgc.norm.pmc)
+yeast.exprs.first.5 <- yeast.exprs[1:5,]
+yeast.exprs.first.5.means <- apply(yeast.exprs.first.5, 1, mean)
+yeast.exprs.first.5.means
+```
+
+# (c)
+```{r, echo=FALSE}
+dim(yeast.bgc.norm.pmc)
+```
+There are a total of 10928 genes across 30 samples in this preprocessed expression data set.
+
+
+# Problem 2
+
+# (a)
+```{r, echo=FALSE, message=FALSE}
+annotation(yeast.raw)
+library('yeast2.db')
+```
+The annotation package for the yeast data set is 'yeast2'
+
+# (b)
+```{r, echo=FALSE}
+library('XML')
+library('annotate')
+go.num.1769308_at <- get('1769308_at', env = yeast2GO)
+mf.go.num.1769308_at <- getOntology(go.num.1769308_at, 'MF')
+mf.go.num.1769308_at
+length(mf.go.num.1769308_at)
+```
+There are a total of 6 GO numbers of the 1769308_at gene related to molecular function.
+
+# (c)
+```{r, echo=FALSE}
+go.parents.1769308_at <- getGOParents(mf.go.num.1769308_at)
+go.parents.list.1769308_at <- sapply(go.parents.1769308_at, function(x) x$Parents)
+go.parents.num.1769308_at <- unique(unlist(go.parents.list.1769308_at))
+go.parents.num.1769308_at
+length(go.parents.num.1769308_at)
+```
+The 1769308_at gene molecular function related GO numbers have 4 parent GO numbers.
+
+# (d)
+```{r, echo=FALSE}
+go.children.1769308_at <- getGOChildren(mf.go.num.1769308_at)
+go.children.list.1769308_at <- sapply(go.children.1769308_at, function(x) x$Children)
+go.children.num.1769308_at <- unique(unlist(go.children.list.1769308_at))
+go.children.num.1769308_at
+length(go.children.num.1769308_at)
+```
+The 1769308_at gene molecular function related GO numbers have 132 children GO numbers.
+
+
+# Problem 3
+
+# (a)
+```{r, message=FALSE}
+library("ALL")
+data('ALL')
+library('genefilter')
+b2.b3.stage.patients <- factor(ALL$BT %in% c("B2","B3"))
+wilcoxon.filter <- function(x) {
+  (wilcox.test(x ~ b2.b3.stage.patients, exact = FALSE, paired = FALSE)$p.value < 0.001)
+}
+welsh.filter <- function(x) {
+  (t.test(x ~ b2.b3.stage.patients)$p.value < 0.001)
+}
+wilcoxon.filtered.exprs <- genefilter(exprs(ALL), wilcoxon.filter)
+welsh.filtered.exprs <- genefilter(exprs(ALL), welsh.filter)
+```
+
+# (b)
+```{r, echo=FALSE, message=FALSE}
+library('limma')
+all.filtered.exprs <- apply(cbind(wilcoxon.filtered.exprs, welsh.filtered.exprs), 2, as.integer)
+filter.counts <- vennCounts(all.filtered.exprs, include = 'both')
+vennDiagram(filter.counts, names = c('Wilcoxon', 'Welsh'))
+```
+
+# (c)
+79 genes pass only the Wilcoxon filter at a level of 0.001. A total of 648 genes pass both the Wilcoxon
+and Welsh filters.
+
+# (d)
+```{r, echo=FALSE, message=FALSE}
+annotation(ALL)
+library('hgu95av2.db')
+gene.manuf.name <- rownames(exprs(ALL))
+find.genename <- function(x) get(x, envir = hgu95av2GENENAME)
+gene.names.vec <- rep(NA, length(gene.manuf.name))
+for(i in 1:length(gene.manuf.name)) {
+  gene.names.vec[i] <- find.genename(gene.manuf.name[i])
+}
+all.oncogene <- unique(gene.names.vec[grep('oncogene', gene.names.vec)])
+all.oncogene
+```
+The annotation package for the ALL data set is hgu95av2.db.
+
+# Problem 4
+
+# (a)
+```{r}
+b1.b2.b3.stage.patients <- ALL[,which(ALL$BT %in% c("B1","B2","B3"))]
+```
+
+# (b)
+```{r, echo=FALSE}
+anova.design.model <- model.matrix(~ 0 + factor(b1.b2.b3.stage.patients$BT))
+colnames(anova.design.model) <- c("B1","B2","B3")
+linear.model.fit <- lmFit(b1.b2.b3.stage.patients, anova.design.model)
+linear.model.fit.bayes.adj <- eBayes(linear.model.fit)
+topTable(linear.model.fit.bayes.adj, coef = 3, number = 5)
+```
+
+# (c)
+```{r, echo=FALSE}
+contrast.model <- makeContrasts(B1-B2, B2-B3, levels = factor(b1.b2.b3.stage.patients$BT))
+contrast.model.fit <- contrasts.fit(linear.model.fit, contrast.model)
+contrast.model.fit.bayes.adj <- eBayes(contrast.model.fit)
+topTable(contrast.model.fit.bayes.adj, number = 5, adjust.method = 'fdr')
+```
+

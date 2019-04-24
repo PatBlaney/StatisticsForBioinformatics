@@ -1,0 +1,186 @@
+---
+title: "Blaney_Module2HW"
+author: "Patrick Blaney"
+date: "January 16, 2019"
+output: pdf_document
+---
+
+```{r, echo=FALSE, message=FALSE}
+# Library necessary for completion of assignment: Multtest and ALL
+library(multtest)
+library(ALL)
+
+# Data necessary for completion of assingment: Golub
+data("golub")
+data("ALL")
+
+# Create factor that indicates the tumor class of all patients in Golub data
+gol_fac <- factor(golub.cl, levels=0:1, labels = c("ALL", "AML"))
+```
+
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE}
+# Create vector of mean expression value for every gene among all ALL patients
+ALL_mean <- apply(golub[, gol_fac=="ALL"], 1, mean)
+str(ALL_mean)
+```
+
+# (b)
+```{r, echo=FALSE}
+# Create vector of mean expression value for every gene among all ALL patients
+AML_mean <- apply(golub[, gol_fac=="AML"], 1, mean)
+str(AML_mean)
+```
+
+# (c)
+```{r, echo=FALSE}
+# Reorder vector of ALL means by largest to smallest
+ALL_max_means <- order(ALL_mean, decreasing = TRUE)
+
+# Isolate the index of the largest 3
+#head(ALL_max_means, n = 3)
+
+# Identify the mean expression value and the biological name of the gene associated with it
+# Sanity check
+#ALL_mean[2784]
+#ALL_mean[2478]
+#ALL_mean[748]
+
+golub.gnames[2784,2]
+golub.gnames[2478,2]
+golub.gnames[748,2]
+
+```
+
+# (d)
+```{r, echo=FALSE}
+# Reorder vector of AML means by largest to smallest
+AML_max_means <- order(AML_mean, decreasing = TRUE)
+
+# Isolate the index of the largest 3
+#head(AML_max_means, n = 3)
+
+# Identify the mean expression value and the biological name of the gene associated with it
+# Sanity check
+#AML_mean[2586]
+#AML_mean[2440]
+#AML_mean[2468]
+
+golub.gnames[2586,2]
+golub.gnames[2440,2]
+golub.gnames[2468,2]
+```
+
+
+# Problem 2
+
+# (a)
+ALM5.csv file attached with submission
+```{r, echo=FALSE, eval=FALSE}
+# Save the expression values of the first five genes for the AML patients in a csv file
+ALM5 <- golub[1:5, gol_fac=="AML"]
+write.csv(ALM5, file = "AML5.csv", row.names = FALSE)
+```
+
+# (b)
+ALL5.txt file attached with submission
+```{r, echo=FALSE, eval=FALSE}
+# Save the expression values of the first five genes for the ALL patients in a plain text file
+ALL5 <- golub[1:5, gol_fac=="ALL"]
+write.table(ALL5 , file = "ALL5.txt", row.names = FALSE)
+```
+
+# (c)
+```{r, echo=FALSE}
+# Compute the standard deviation of the expression values on the first patient, of the 100th to 200th genes
+sd(golub[100:200, 1])
+```
+
+# (d)
+```{r, echo=FALSE}
+# Compute the standard deviation of the expression values of all genes for each patient
+total_pos_sd_genes <- 0
+for (i in 1:ncol(golub)) {
+    
+  # If standard deviation of all genes is greater than 1, add 1 to the total count
+  sd_genes <- sd(golub[, i])
+  
+  # Stanity check
+  #print(sd_genes)
+  
+  if (sd_genes > 1) {
+    total_pos_sd_genes = total_pos_sd_genes + 1
+  }
+  i = i + 1
+}
+total_pos_sd_genes
+```
+
+# (e)
+```{r, echo=FALSE}
+# Initialize variables for gene expression values of interest and the names of the genes
+gene_101_expression <- golub[101,]
+gene_101_bio_name <- golub.gnames[101, 3]
+gene_102_expression <- golub[102,]
+gene_102_bio_name <- golub.gnames[102, 3]
+
+plot(x = gene_101_expression, y = gene_102_expression, xlab = gene_101_bio_name, ylab = gene_102_bio_name)
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+# Extract the gene expressions from the patients in disease stage B1 within the ALL expression set
+stage_B1_expression <- exprs(ALL[, ALL$BT == "B1"])
+
+# Plot the stage B1 expression data in a histogram
+hist(stage_B1_expression, xlab = "Gene Expression Values", main = "Gene Expression Values of Patients in Disease Stage B1")
+```
+
+# (b)
+```{r, echo=FALSE}
+# Compute the mean gene expressions for every gene over B1 patients
+stage_B1_mean_expression <- apply(stage_B1_expression, 1, mean)
+str(stage_B1_mean_expression)
+```
+
+# (c)
+```{r, echo=FALSE}
+# Reorder vector of B1 expression means by largest to smallest
+stage_B1_max_means <- order(stage_B1_mean_expression, decreasing = TRUE)
+
+# Isolate the index of the largest 3
+#head(stage_B1_max_means, n = 3)
+
+# Identify the mean expression value and the gene identifier
+stage_B1_mean_expression[12586]
+stage_B1_mean_expression[1979]
+stage_B1_mean_expression[1974]
+```
+
+
+# Problem 4
+
+# (a)
+```{r, echo=FALSE}
+# Load the trees data
+data(trees)
+class(trees)
+```
+
+# (b)
+```{r, echo=FALSE}
+height <- trees$Height
+girth <- trees$Girth
+volume <- trees$Volume
+
+h_and_v_to_g <- plot(x = girth, y = height, col ="blue", pch = 3, ylim = c(10, 85), xlab = "Girth", ylab = "Height & Volume", 
+               points(girth, volume, col = "red")
+               )
+```
+

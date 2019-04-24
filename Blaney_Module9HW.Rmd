@@ -1,0 +1,163 @@
+---
+title: "Blaney_Module9HW"
+author: "Patrick Blaney"
+date: "March 11, 2019"
+output: pdf_document
+---
+
+# Data and package required for completion of assignment
+```{r, message=FALSE}
+library(multtest)
+data("golub")
+data("stackloss")
+```
+
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE}
+GRO2_index <- grep("GRO2 GRO2 oncogene", golub.gnames[ , 2])
+GRO3_index <- grep("GRO3 GRO3 oncogene", golub.gnames[ , 2])
+
+GRO2_data <- golub[GRO2_index, ]
+GRO3_data <- golub[GRO3_index, ]
+print("The linear correlation coefficient is")
+cor(GRO2_data, GRO3_data)
+
+plot(GRO2_data, GRO3_data, xlim = c(-1.6, -0.75), ylim = c(-1.5, -0.5))
+```
+
+# (b)
+```{r, echo=FALSE}
+cor.test(GRO2_data, GRO3_data, conf.level = 0.90)
+```
+The 90% Confidence Interval is 0.670 to 0.878. The sample estimates given is identical to part (a). Furthermore, with a 
+very small p-value of 2.2e-09, the null hypothesis of no correlation can be rejected.
+
+# (c)
+```{r, echo=FALSE}
+n_boot_1 <- 2000
+boot_cor_matrix <- matrix(NA, nrow = n_boot_1, ncol = 1)
+GRO_data <- cbind(GRO2_data, GRO3_data)
+for(i in 1:n_boot_1) {
+  resample_data <- GRO_data[sample(1:nrow(GRO_data), replace = TRUE), ]
+  boot_cor_matrix[i, ] <- cor(resample_data[,1], resample_data[,2])
+}
+quantile(boot_cor_matrix[,1], c(0.05, 0.95))
+```
+
+
+# Problem 2
+
+# (a)
+```{r, echo=FALSE}
+Zyxin_data <- golub[2124, ]
+Zyxin_cors <- apply(golub, 1, function(x) cor(Zyxin_data, x))
+print("# of genes with highly negative correlations coefficient to Zyxin")
+sum(Zyxin_cors < -0.5)
+```
+
+# (b)
+```{r, echo=FALSE}
+sorted_Zyxin_cors <- order(Zyxin_cors, decreasing = FALSE)
+#head(sorted_Zyxin_cors, n = 5)
+golub.gnames[394, 2]
+Zyxin_cors[394]
+golub.gnames[717, 2]
+Zyxin_cors[717]
+golub.gnames[2489, 2]
+Zyxin_cors[2489]
+golub.gnames[849, 2]
+Zyxin_cors[849]
+golub.gnames[1145, 2]
+Zyxin_cors[1145]
+```
+
+# (c)
+```{r, echo=FALSE}
+Zyxin_cors_ttest_p_values <- apply(golub, 1, function(x) cor.test(Zyxin_data, x, alternative = "less")$p.value)
+Zyxin_cors_ttest_adj_p_values <- p.adjust(Zyxin_cors_ttest_p_values, method = "fdr")
+print("# of genes negatively correlated with Zyxin at an FDR adjusted level of 0.05")
+sum(Zyxin_cors_ttest_adj_p_values < 0.05)
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+GRO3 <- golub[2715,]
+GRO2 <- golub[2714,]
+
+GRO3_on_GRO2_reg <- lm(GRO3 ~ GRO2)
+summary(GRO3_on_GRO2_reg)
+```
+There is indeed a statistically significant linear relationship between the two genes. The associated p-value for
+the correlation coefficient are very small at 2.20e-09. This means we can reject the null hypothesis that
+the correlation coefficient is zero.
+63.46% of GRO3 GRO3 oncogene expression's variation can be explained by this regression on GRO2 GRO2 oncogene
+expression
+
+# (b)
+```{r, echo=FALSE}
+confint(GRO3_on_GRO2_reg, level = 0.95)
+```
+The slope is less than 0.5 at the a = 0.05 level. The confidence interval above shows slope with 95% CI (0.266, 0.450)
+
+# (c)
+```{r, echo=FALSE}
+predict(GRO3_on_GRO2_reg, newdata = data.frame(GRO2=0), interval = "prediction", level = 0.8)
+```
+The 80% PI when GRO2 GRO2 oncogene is not expressed is (-1.268, -0.418)
+
+# (d)
+```{r, echo=FALSE}
+shapiro.test(residuals(GRO3_on_GRO2_reg))
+plot(GRO3_on_GRO2_reg, which=2)
+plot(GRO3_on_GRO2_reg, which=1)
+log_GRO3_on_GRO2_reg <- lm(log(GRO3) ~ log(GRO2))
+shapiro.test(residuals(log_GRO3_on_GRO2_reg))
+```
+The Shapiro-Wilk test gave a p-value of 0.0753, which is very close to the standard cutoff but the visual
+provided by the qq-plot suggest that the noise is normally distributed but only by a slight margin.
+The residuals vs fitted plot appears to show a concentrated linear pattern in the majority of means.
+This would suggest the variances are not significantly increasing with the fitted values, so the
+homoscedasticity assumption doesn't appear violated.
+Another Shapiro-Wilk test after performing a log transformation of the data before regression shows
+a p-value of 0.912 which would help reaffirm that the noise is normally distributed.
+Thus, we can trust the statistical inferences from the original regression fit. 
+
+
+# Problem 4
+
+# (a)
+```{r, echo=FALSE}
+stackloss_regression <- lm(stack.loss ~ Air.Flow + Water.Temp + Acid.Conc., data = stackloss)
+summary(stackloss_regression)
+```
+The fitted regression equation: stack.loss = -39.920 + 0.716 Air.Flow + 1.295 Water.Temp - 0.152 Acid.Conc.
+
+# (b)
+Based on the regression, only air flow and water temperature have a statistically significant effect on stack loss.
+This derived from their high correaltion coefficients 0.716 and 1.295, respectively, with associated 
+p-values of 0.00375 and 5.8e-05. Acid concentration has a very minimal coefficient of -0.152 with a high
+p-value of 0.344.
+These variables in this regression explain 91.36% of total variation in stack loss.
+
+# (c)
+```{r, echo=FALSE}
+predict(stackloss_regression,
+        newdata = data.frame(Air.Flow=60, Water.Temp=20, Acid.Conc.=90),
+        interval = "confidence",
+        level = 0.9
+        )
+print("90% CI of stackloss when Air.Flow=60, Water.Temp=20 and Acid.Conc.=90 is 13.501 to 16.966")
+predict(stackloss_regression,
+        newdata = data.frame(Air.Flow=60, Water.Temp=20, Acid.Conc.=90),
+        interval = "prediction",
+        level = 0.9
+        )
+print("90% PI of stackloss when Air.Flow=60, Water.Temp=20 and Acid.Conc.=90 is 9.331 to 21.136")
+```
+

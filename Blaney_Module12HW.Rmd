@@ -1,0 +1,177 @@
+---
+title: "Blaney_Module12HW"
+author: "Patrick Blaney"
+date: "April 8, 2019"
+output: pdf_document
+---
+
+# Data and packages required for completion of assignment
+```{r, message=FALSE}
+library(ALL)
+data(ALL)
+library(scatterplot3d)
+library(annotate)
+```
+
+# Problem 1
+
+# (a)
+```{r}
+ALL.fac <- as.numeric(ALL$BT %in% c("B","B1","B2","B3","B4")) + 1
+```
+
+# (b)
+```{r, echo=FALSE}
+par(mfrow = c(1, 3))
+for(i in 1:3) {
+  hist(exprs(ALL[i,]), freq = FALSE, main = "", xlab = rownames(exprs(ALL[i,])))
+  lines(density(exprs(ALL[i,])), col = "red")
+}
+```
+
+# (c)
+```{r, echo=FALSE}
+first.five.genes <- cbind(as.vector(exprs(ALL[1,])),
+                          as.vector(exprs(ALL[2,])),
+                          as.vector(exprs(ALL[3,])),
+                          as.vector(exprs(ALL[4,])),
+                          as.vector(exprs(ALL[5,]))
+                          )
+pairs(first.five.genes, labels = rownames(ALL[1:5,]))
+```
+
+# (d)
+```{r, echo=FALSE}
+gene.index.39317_at <- grep("39317_at", x = rownames(ALL))
+gene.data.39317_at <- as.vector(exprs(ALL[gene.index.39317_at,]))
+gene.index.32649_at <- grep("32649_at", x = rownames(ALL))
+gene.data.32649_at <- as.vector(exprs(ALL[gene.index.32649_at,]))
+gene.index.481_at <- grep("^481_at", x = rownames(ALL), perl = TRUE)
+gene.data.481_at <- as.vector(exprs(ALL[gene.index.481_at,]))
+genes.of.interest <- cbind(gene.data.39317_at,
+                           gene.data.32649_at,
+                           gene.data.481_at
+                           )
+scatterplot3d(genes.of.interest, color = ALL.fac)
+```
+The two patient groups are fairly well distinguishable from this 3D scatterplot. It might be more visable if the
+x, y, and z axis are reorganized.
+
+# (e)
+```{r, echo=FALSE}
+kmeans.2.cl <- kmeans(genes.of.interest, centers = 2)
+table(kmeans.2.cl$cluster)
+kmeans.3.cl <- kmeans(genes.of.interest, centers = 3)
+table(kmeans.3.cl$cluster)
+```
+The first method of K-means clustering with 2 centers appears to be on the right track but still has a
+relatively high amount of misclassifications at 19. At first glance the K-means clustering with 3 centers
+wouldn't seem appropriate but it was actually very accurate. It clustered both "main" patient groups
+without any misclassification and further broke the B-cell patient group into two separate subgroups.
+
+# (f)
+```{r, echo=FALSE}
+ALL.pca <- prcomp(exprs(ALL))
+summary(ALL.pca)
+```
+The first prinicpal component explains the vast majority of the variance in the ALL dataset at 93.59%.
+The second prinicpal component explains less than one percent of the rest of the variance at 0.95% and each
+principal component after this is even smaller.
+
+# (g)
+```{r, echo=FALSE}
+biplot(ALL.pca, cex = 0.25, xlim = c(-0.041, 0.018), ylim = c(-0.039, 0.04))
+ALL.pca$rotation[,1]
+mean(ALL.pca$rotation[,1])
+```
+Since all the red arrows appear to be nearly identical length, this suggests that PC1 represents the average of
+all 128 patients. This is further corroborated by looking at all the loadings for PC1 and then the average of all
+the loadings. These values are all very similar confirming the suggestion made by the biplot.
+
+# (h)
+```{r, echo=FALSE}
+#head(order(ALL.pca$x[,2], decreasing = TRUE), n = 3)
+print("The three genes with the largest PC2 values are")
+rownames(exprs(ALL[12047]))
+rownames(exprs(ALL[12582]))
+rownames(exprs(ALL[8095]))
+#tail(order(ALL.pca$x[,2], decreasing = TRUE), n = 3)
+print("The three genes with the smallest PC2 values are")
+rownames(exprs(ALL[4721]))
+rownames(exprs(ALL[2673]))
+rownames(exprs(ALL[9406]))
+```
+
+# (i)
+```{r, echo=FALSE, message=FALSE}
+library('hgu95av2.db')
+pc2.largest.gene.manf <- rownames(exprs(ALL[12047]))
+pc2.smallest.gene.manf <- rownames(exprs(ALL[4721]))
+get(pc2.largest.gene.manf, envir = hgu95av2GENENAME)
+get(pc2.smallest.gene.manf, envir = hgu95av2GENENAME)
+get(pc2.largest.gene.manf, envir = hgu95av2CHR)
+get(pc2.smallest.gene.manf, envir = hgu95av2CHR)
+```
+
+
+# Problem 2
+
+# (a)
+```{r}
+iris.data <- data.frame(iris$Sepal.Length,
+                        iris$Sepal.Width,
+                        iris$Petal.Length,
+                        iris$Petal.Width
+                        )
+scaled.iris.data <- data.frame(log(iris$Sepal.Length),
+                               log(iris$Sepal.Width),
+                               log(iris$Petal.Length),
+                               log(iris$Petal.Width)
+                               )
+```
+
+# (b)
+```{r, echo=FALSE}
+print("Correlation between unscaled sepal length and sepal width")
+cor(iris.data$iris.Sepal.Length, iris.data$iris.Sepal.Width)
+print("Correlation between scaled sepal length and sepal width")
+cor(scaled.iris.data$log.iris.Sepal.Length., scaled.iris.data$log.iris.Sepal.Width.)
+
+print("Correlation between unscaled petal length and petal width")
+cor(iris.data$iris.Petal.Length, iris.data$iris.Petal.Width)
+print("Correlation between scaled petal length and petal width")
+cor(scaled.iris.data$log.iris.Petal.Length., scaled.iris.data$log.iris.Petal.Width.)
+
+print("Correlation between unscaled sepal length and petal width")
+cor(iris.data$iris.Sepal.Length, iris.data$iris.Petal.Width)
+print("Correlation between scaled sepal length and petal width")
+cor(scaled.iris.data$log.iris.Sepal.Length., scaled.iris.data$log.iris.Petal.Width.)
+```
+
+# (c)
+```{r}
+#dist(cbind(scaled.iris.data$log.iris.Sepal.Length., scaled.iris.data$log.iris.Sepal.Width.), method = "euclidean") ^ 2
+```
+
+# (d)
+```{r, echo=FALSE}
+unscaled.iris.pca <- prcomp(iris.data, scale. = FALSE)
+unscaled.iris.pca
+scaled.iris.pca <- prcomp(scaled.iris.data, scale. = FALSE)
+scaled.iris.pca
+```
+While the two principal component analyses are fairly similar they are not the identical.
+
+# (e)
+```{r, echo=FALSE}
+summary(scaled.iris.pca)
+summary(unscaled.iris.pca)
+```
+For the scaled PCA, PC1 and PC2 explain 97.02% and 1.413%, respecitively.
+For the unscaled PCA, PC1 and PC2 explain 92.46% and 5.307%, respectively.
+
+# (f)
+```{r, echo=FALSE}
+quantile(scaled.iris.pca$x[,2], c(0.05, 0.95))
+```
+

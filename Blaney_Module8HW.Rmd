@@ -1,0 +1,145 @@
+---
+title: "Blaney_Module8HW"
+author: "Patrick Blaney"
+date: "March 1, 2019"
+output: pdf_document
+---
+
+# Data and package required for completion of assignment
+```{r, message=FALSE}
+library(ALL)
+data(ALL)
+library(lmtest)
+```
+
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE}
+ALL_Bstages_1 <- ALL[, ALL$BT %in% c("B", "B1", "B2", "B3", "B4")]
+gene_exp_109_at <- exprs(ALL_Bstages_1)["109_at", ]
+anova(lm(gene_exp_109_at ~ ALL_Bstages_1$BT))
+```
+The p-value from this one-way ANOVA table is 0.01082 which is low enough to reject the null hypothesis that means
+are all equal. Thus, it is concluded that the disease stages, B, B1, B2, B3, and B4 affect the mean gene expression value.
+
+# (b)
+```{r, echo=FALSE}
+print("Summary of linear model without intercept")
+summary(lm(gene_exp_109_at ~ ALL_Bstages_1$BT -1))
+
+print("Summary of linear model with intercept")
+summary(lm(gene_exp_109_at ~ ALL_Bstages_1$BT))
+```
+From these summary statistics, the mean gene expression value among the B3 patients is 6.68533. From table one, this
+value is estimated for B3 as 6.68533. This value is confirmed in table two, as calulated by 6.8102-0.1249=6.6853.
+
+# (c)
+```{r, echo=FALSE}
+pairwise.t.test(gene_exp_109_at, ALL_Bstages_1$BT)
+```
+Based on the compairative pairwise t-test table, only B2's mean showed any difference from B but with p-value of
+only 0.52 this difference cannot be confirmed
+
+# (d)
+```{r, echo=FALSE}
+pairwise.t.test(gene_exp_109_at, ALL_Bstages_1$BT, p.adjust.method = 'fdr')
+```
+Based on the compairative pairwise t-test table with the p-values adjusted with the FDR method, only the mean gene
+expression value of B4 is different from B2. This is confirmed witha adjusted p-value of 0.01 which passes the 0.05 level test
+
+# (e)
+```{r, echo=FALSE}
+shapiro.test(residuals(lm(gene_exp_109_at ~ ALL_Bstages_1$BT)))
+bptest(lm(gene_exp_109_at ~ ALL_Bstages_1$BT))
+```
+With the Shapiro-Wilk test for normality giving a p-value of 0.1177, the null hypothesis of normally
+distributed residuals cannot be rejected. Therefore, the group gene expression residuals are normal.
+With the Breusch-Pagan test for homoscedasticity giving a p-value of 0.8352, the null hypothesis of 
+equal variances cannot be rejected. Therefore, the group gene expression residuals are homoscedastic.
+With both assumptions being confirmed, there is no need for a more robust test.
+
+
+# Problem 2
+
+# (a)
+```{r, echo=FALSE}
+ALL_Bstages_2 <- ALL[, ALL$BT %in% c("B", "B1", "B2", "B3", "B4")]
+gene_exp_ALL <- exprs(ALL_Bstages_2)
+kw_tests <- apply(gene_exp_ALL, 1, function(x) kruskal.test(x ~ ALL_Bstages_2$BT)$p.value)
+kw_tests_fdr_adj <- p.adjust(kw_tests, method = 'fdr')
+print("# of genes within the groups that pass the 0.05 FDR adjusted level are")
+sum(kw_tests_fdr_adj < 0.05)
+```
+Since these genes passed the FDR adjusted p-value level, the null hypothesis of equal distributions of gene
+expression values can be rejected.
+
+# (b)
+```{r, echo=FALSE}
+sorted_kw_adj_p <- order(kw_tests_fdr_adj, decreasing = FALSE)
+print("Probe names with smallest FDR adjusted p-value")
+kw_tests_fdr_adj[419]
+kw_tests_fdr_adj[8636]
+kw_tests_fdr_adj[10365]
+kw_tests_fdr_adj[964]
+kw_tests_fdr_adj[10251]
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+ALL_Bstages_sex <- ALL[ , which(ALL$BT %in% c("B1", "B2", "B3", "B4") & ALL$sex %in% c("M", "F"))]
+gene_exp_38555_at <- exprs(ALL_Bstages_sex)["38555_at", ]
+Bstages <- ALL_Bstages_sex$BT
+sex <- ALL_Bstages_sex$sex
+anova(lm(gene_exp_38555_at ~ Bstages * sex))
+```
+Based on the ANOVA table, the p-value for the disease stages is very small showing this is a factor.
+However, sex is not a factor that affects gene expression and there also no statistically significant interaction
+based on their respective p-values 0.7851 and 0.9095
+
+# (b)
+```{r, echo=FALSE}
+shapiro.test(residuals(lm(gene_exp_38555_at ~ Bstages * sex)))
+bptest(lm(gene_exp_38555_at ~ Bstages * sex))
+```
+Based on the output, the Shapiro-Wilk normality test p-value of 0.03291 indicates the null hypothesis of normality
+can be rejected. This violates the assumption of normality and would require a more robust test.
+However, the Breusch-Pagan homoscedasticity test p-value of 0.3209 indicates the null hypothesis of equal variances
+cannot be rejected. This does not violate the assumption of equal variances.
+
+
+# Problem 4
+
+# (a)
+```{r}
+anova_perm_test <- function(gene_data, factor_group) {
+  n <- length(gene_data)
+  factor_group_means <- by(gene_data, factor_group, mean)
+  n_factor_group <- length(factor_group_means)
+  obs_stat <- (1 / (n_factor_group - 1)) * sum((factor_group_means - mean(factor_group_means)) ^ 2)
+  
+  n_perm <- 2000
+  perm_stat <- rep(NA, n_perm)
+  for(i in 1:n_perm) {
+    perm_data <- sample(gene_data, n, replace = FALSE)
+    perm_factor_means <- by(perm_data, factor_group, mean)
+    n_perm_factor <- length(perm_factor_means)
+    perm_stat[i] <- (1 / (n_perm_factor - 1)) * sum((perm_factor_means - mean(perm_factor_means)) ^ 2)
+  }
+  
+  mean(perm_stat >= obs_stat)
+}
+```
+
+# (b)
+```{r, echo=FALSE}
+ALL_Bstages_4 <- ALL[, ALL$BT %in% c("B1", "B2", "B3")]
+gene_exp_1242_at <- exprs(ALL_Bstages_4)["1242_at", ]
+Bstage_factor_group <- ALL_Bstages_4$BT[, drop = TRUE]
+anova_perm_test(gene_exp_1242_at, Bstage_factor_group)
+```
+With a permutated p-value of 0.524, the the null hypothesis that means are all equal cannot be rejected.

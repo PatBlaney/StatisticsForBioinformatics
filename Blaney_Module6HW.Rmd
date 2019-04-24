@@ -1,0 +1,210 @@
+---
+title: "Blaney_Module6HW"
+author: "Patrick Blaney"
+date: "February 14, 2019"
+output: pdf_document
+---
+
+# Data and package required for completion of assignment
+```{r, echo=FALSE}
+data(golub, package = "multtest")
+gol_fac <- factor(golub.cl, levels=0:1, labels = c("ALL", "AML"))
+```
+
+
+# Problem 1
+
+# (a)
+The null hypothesis for this problem is H0: mu = -0.9 and the alternative hypothesis is HA: mu > -0.9. Therefore this will require
+a one-sided t-test
+```{r, echo=FALSE}
+t.test(golub[2972, gol_fac=="ALL"], mu = -0.9, alternative = "greater")
+```
+Based on the derived p-value being less than the standard cutoff of 0.05, the null hypothesis can be rejected. Thus, the mean
+H4/j gene expression value in ALL patients is greater than -0.9
+
+# (b)
+Since both samples have the different sizes, this comparison will be evaluated with a two-sample Welch t-test where the 
+null hypothesis is H0: mu(ALL) = mu(AML) and the alternative hypothesis is HA: mu(ALL) != mu(AML).
+```{r, echo=FALSE}
+t.test(golub[2972, gol_fac=="ALL"], golub[2972, gol_fac=="AML"])
+```
+Based on the derived p-value being rather large when compared to the standard cutoff of 0.05, the null hypothesis cannot be
+rejected and thus it cannot be concluded that the mean H4/j gene is differentially expressed in ALL patients when compared to
+AML patients.
+
+# (c)
+Since both samples have the same size, this comparison will be evaluated with a paired Welch t-test where the hull hypothesis
+is H0: mu(H4/j) = mu(APS) and the alternative hypothesis is HA: mu(H4/j) < mu (APS)
+```{r, echo=FALSE}
+t.test(golub[2972, gol_fac=="ALL"], golub[2989, gol_fac=="ALL"], paired = T, alternative = "less")
+```
+Based on the derived p-value being less than the standard cutoff of 0.05, the null hypothesis can be rejected. Thus, the mean
+H4/j gene expression is lower than APS Prostate specific antigen gene expression in ALL patients. 
+
+# (d)
+This comparison of population proportion is a one-sided binomial proportion test where the null hypothesis is H0: p(H4/j < APS) = 0.5
+the alternative hypothesis is HA: p(H4/j < APS) > 0.5 for ALL patients.
+```{r, echo=FALSE}
+success_tests_d <- golub[2972, gol_fac=="ALL"] < golub[2989, gol_fac=="ALL"]
+prop.test(sum(success_tests_d), length(success_tests_d) , p = 0.5, alternative = "greater")
+```
+Based on the derived p-value being rather large when compared to the standard cutoff of 0.05, the null hypothesis cannot be
+rejected. This p-value may seem not in agreement with the answer in part (c) but that for this sample set, the proportion is 
+larger than 0.5.
+
+# (e)
+This comparison of population proportion is a one-sided binomial proportion test where the null hypothesis is 
+H0: p(H4/j > -0.6) = 0.5 and the alternative hypothesis is HA: p(H4/j > -0.6) < 0.5 for ALL patients.
+```{r, echo=FALSE}
+success_tests_e <- golub[2972, gol_fac=="ALL"] > -0.6
+prop.test(sum(success_tests_e), length(success_tests_e), p = 0.5, alternative = "less")
+```
+Based on the derived p-value being rather large when compared to the standard cutoff of 0.05, the null hypothesis cannot be
+rejected. However, for this sample set, the proportion is less than 0.5. 
+
+# (f)
+This comparison of population proportion is a two sided proportion test where the null hypothesis is 
+H0: p(H4/j ALL > -0.6) = p(H4/j AML > -0.6) and the alternative hypothesis is HA: p(H4/j ALL > -0.6) != p(H4/j AML > -0.6)
+```{r, echo=FALSE}
+success_tests_all_f <- golub[2972, gol_fac=="ALL"] > -0.6
+success_tests_aml_f <- golub[2972, gol_fac=="AML"] > -0.6
+all_count <- sum(success_tests_all_f)
+aml_count <- sum(success_tests_aml_f)
+all_len <- length(success_tests_all_f)
+aml_len <- length(success_tests_aml_f)
+prop.test(
+  x = c(all_count, aml_count),
+  n = c(all_len, aml_len),
+  alternative = "two.sided"
+  )
+```
+Based on the derived p-value being rather large when compared to the standard cutoff of 0.05, the null hypothesis cannot be
+rejected.
+
+
+# Problem 2
+
+# (a)
+```{r, echo=FALSE}
+p_2 <- 0.05
+n_2 <- 2000
+p_2 * n_2
+```
+
+# (b)
+```{r, echo=FALSE}
+x_2 <- 89
+x_2 / n_2
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+u_null_3 <- 3
+p_lower_3 <- 0.3
+p_upper_3 <- 0.4 
+nsim_3 <- 10000
+n_3 <- 20
+mean_3 <- 3
+std_dev_3 <- 4
+
+
+t_obs_3 <- function(x) (mean(x) - u_null_3) / (std_dev_3 / sqrt(n_3))
+x_random_sample_3 <- matrix(rnorm(n_3 * nsim_3, mean = mean_3, sd = std_dev_3), ncol = n_3)
+
+t_stat <- apply(x_random_sample_3, 1, t_obs_3)
+power_l_3 <- t_stat > qt(p_lower_3, df = (n_3 - 1))
+power_u_3 <- t_stat < qt(p_upper_3, df = (n_3 - 1))
+power_3 <- mean(power_l_3 == power_u_3)
+
+print("The Monte Carlo estimate of Type I error rate is")
+power_3
+print("with 95% CI as")
+power_3 + c(-1, 1) * qnorm(0.975) * sqrt(power_3 * (1 - power_3) / nsim_3)
+```
+This test is on the verge of validity but if a strict cutoff of a = 0.1, then this test will not be valid.
+
+# (b)
+Currently, this test should not be used in practice. This because the cutoff value of 0.1 is already a 
+fairly high allowance and based on the previous calculations, that value may not even be high enough based 
+on this number of simulations and sample size.
+
+
+# Problem 4
+
+# (a)
+```{r, echo=FALSE}
+all_p_values <- apply(golub[, gol_fac=="ALL"], 1, function(x) t.test(x)$p.value)
+aml_p_values <- apply(golub[, gol_fac=="AML"], 1, function(x) t.test(x)$p.value)
+
+all_bon_adjust_p <- p.adjust(all_p_values, method = "bonferroni")
+print("# of genes diff. expressed in ALL patients using Bonferroni adj. p-value of 0.05 is")
+sum(all_bon_adjust_p > 0.05)
+aml_bon_adjust_p <- p.adjust(aml_p_values, method = "bonferroni")
+print("# of genes diff. expressed in AML patients using Bonferroni adj. p-value of 0.05 is")
+sum(aml_bon_adjust_p > 0.05)
+
+all_fdr_adjust_p <- p.adjust(all_p_values, method = "fdr")
+print("# of genes diff. expressed in ALL patients using FDR adj. p-value of 0.05 is")
+sum(all_fdr_adjust_p > 0.05)
+aml_fdr_adjust_p <- p.adjust(aml_p_values, method = "fdr")
+print("# of genes diff. expressed in AML patients using FDR adj. p-value of 0.05 is")
+sum(aml_fdr_adjust_p > 0.05)
+```
+
+# (b)
+```{r, echo=FALSE}
+all_sorted_p <- order(all_p_values, decreasing = FALSE)
+print("The top 3 strongest differentially expressed genes for ALL patients are")
+golub.gnames[1014, 2]
+golub.gnames[2902, 2]
+golub.gnames[2710, 2]
+
+aml_sorted_p <- order(aml_p_values, decreasing = FALSE)
+print("The top 3 strongest differentially expressed genes for AML patients are")
+golub.gnames[2847, 2]
+golub.gnames[9, 2]
+golub.gnames[735, 2]
+```
+
+# Problem 5
+
+# (a)
+Wald CI
+```{r}
+wald_ci <- function(x) {
+  (mean(x)/n) + 
+  c(-1, 1) * 
+  qnorm(1 - a / 2) * 
+  (n ^ -0.5) * 
+  sqrt(x/n * (1 - x/n))
+}
+```
+
+Wilson CI
+```{r}
+wilson_ci <- function(x) {
+  ((mean(x) + (qnorm(1 - a / 2) ^ 2) / 2) / (n + qnorm(1 - a / 2) ^ 2)) + 
+  c(-1, 1) * 
+  ((qnorm(1 - a / 2) * sqrt(n)) / (n + qnorm(1 - a / 2) ^ 2)) * 
+  sqrt(x/n * (1 - x/n) + (qnorm(1 - a / 2) ^ 2) / (4 * n))
+}
+```
+
+Agresti - Coull CI
+```{r}
+agrest_coull_ci <- function(x) {
+  (mean(x) + (qnorm(1 - a / 2) ^ 2) / 2) / (n + qnorm(1 - a / 2) ^ 2) +
+  c(-1, 1) *
+  qnorm(1 - a / 2) *
+  sqrt((mean(x) + (qnorm(1 - a / 2) ^ 2) / 2) / 
+       (n + qnorm(1 - a / 2) ^ 2) * 
+       (1 - (mean(x) + (qnorm(1 - a / 2) ^ 2) / 2) / (n + qnorm(1 - a / 2) ^ 2))
+      ) *
+  (n + qnorm(1 - a / 2) ^ 2) ^ -0.5
+}
+```
+

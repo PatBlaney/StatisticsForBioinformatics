@@ -1,0 +1,180 @@
+---
+title: "Blaney_Module3HW"
+author: "Patrick Blaney"
+date: "January 28, 2019"
+output: pdf_document
+---
+
+# Problem 1
+
+```{r, echo=FALSE}
+print("b")
+```
+
+
+# Problem 2
+
+```{r, echo=FALSE}
+x1_range <- c(0, 1, 2, 3, 4)
+x1_func <- function(x) ((2 ^ x) / factorial(x)) * exp(-2)
+x1_pdf <- function(x) x1_func(x) * (x %in% x1_range)
+print("P(X = 1) is")
+x1_pdf(1)
+
+print("P(-2 < X <4) is")
+sum(x1_pdf(x1_range) * (-2 < x1_range & x1_range < 4))
+```
+
+
+# Problem 3
+
+```{r, echo=FALSE}
+print("n = 3, p = 0.25")
+```
+
+
+# Problem 4
+
+```{r, echo=FALSE}
+print("P(Y <= 2 ) is")
+pbinom(2, size = 3, prob = 0.25)
+
+y1_range <- (0:3)
+print("E(Y) is")
+e_y1 <- sum(y1_range * dbinom(y1_range, size = 3, prob = 0.25))
+e_y1
+
+print("Var(Y) is")
+var_y1 <- sum((y1_range - e_y1) ^ 2 * dbinom(y1_range, size = 3, prob = 0.25) )
+var_y1
+```
+
+
+# Problem 5
+
+```{r, echo=FALSE}
+m2 <- 3
+x2_range <- (2:3)
+x2_chi_prob <- sum(dchisq(x2_range, m2))
+print("P(1 < X < 4) is")
+x2_chi_prob
+
+print("E(X) is")
+e_x2 <- m2
+e_x2
+
+print("Var(X) is")
+var_x2 <- 2 * m2
+var_x2
+
+x2_chi_monte_carlo <- rchisq(n = 100000, m2)
+chi_monte_carlo_est <- mean((1 < x2_chi_monte_carlo) & (x2_chi_monte_carlo < 4))
+print("Monte Carlo estimate is")
+chi_monte_carlo_est
+```
+The Monte Carlo estimate agrees with my answer above to a reasonable degree considering only two data points were used for
+the original calculation
+
+
+# Problem 6
+
+```{r, echo=FALSE}
+m3 <- 5
+e_x3 <- m3
+var_x3 <- 2 * e_x3 
+
+print("E(Y) is")
+e_y3 <- 4 * e_x3 - 10
+e_y3
+
+print("Var(Y) is")
+var_y3 <- 4 ^ 2 * var_x3
+var_y3
+```
+Y does not follow a Chi-square distribution with a degree of freedom m = 10 as Var(Y) is more than 2*m
+
+
+# Problem 7
+
+# (a)
+```{r, echo=FALSE}
+zyxin_func <- function(x) dnorm(x, mean = 1.6, sd = 0.4)
+integrate(zyxin_func, lower = 1, upper = 1.6)
+```
+
+# (b)
+```{r, echo=FALSE}
+norm_monte_carlo <- rnorm(500000, mean = 1.6, sd = 0.4)
+norm_monte_carlo_est <- mean((1 < norm_monte_carlo) & (norm_monte_carlo < 1.6))
+norm_monte_carlo_est
+```
+
+# (c)
+Binomial distribution to be utilized.
+P(Y >= 2) = 1 - P(Y <= 1)
+```{r, echo=FALSE}
+n <- 5
+p <- integrate(zyxin_func, lower = 1, upper = 1.6)$value
+1 - pbinom(1, size = n, prob = p)
+```
+
+
+# Problem 8
+
+# (a)
+```{r, echo=FALSE}
+f1_m <- 2
+f1_n <- 5
+f1_dis_fun <- function(x) df(x, f1_m, f1_n)
+f1_dis_mean_func <- function(x) x * f1_dis_fun(x)
+f1_mean <- integrate(f1_dis_mean_func, lower = 0, upper = Inf)$value
+f1_dis_var_func <- function(x) (x - f1_mean)^2 * f1_dis_fun(x)
+f1_var <- integrate(f1_dis_var_func, lower = 0, upper = Inf)$value
+
+f2_m <- 10
+f2_n <- 5
+f2_dis_fun <- function(x) df(x, f2_m, f2_n)
+f2_dis_mean_func <- function(x) x * f2_dis_fun(x)
+f2_mean <- integrate(f2_dis_mean_func, lower = 0, upper = Inf)$value
+f2_dis_var_func <- function(x) (x - f2_mean)^2 * f2_dis_fun(x)
+f2_var <- integrate(f2_dis_var_func, lower = 0, upper = Inf)$value
+```
+
+# (b)
+```{r, echo=FALSE}
+f1_direct_mean <- (f1_n / (f1_n - 2))
+f1_direct_var <- ((2 * f1_n ^ 2) * (f1_m + f1_n - 2)) / (f1_m * (f1_n - 2) ^ 2 * (f1_n - 4))
+print("X~F(m=2,n=5) direct mean is")
+f1_direct_mean
+print("X~F(m=2,n=5) direct variance is")
+f1_direct_var
+
+f2_direct_mean <- (f2_n / (f2_n - 2))
+f2_direct_var <- ((2 * f2_n ^ 2) * (f2_m + f2_n - 2)) / (f2_m * (f2_n - 2) ^ 2 * (f2_n - 4))
+print("X~F(m=10,n=5) direct mean is")
+f2_direct_mean
+print("X~F(m=10,n=5) direct variance is")
+f2_direct_var
+```
+
+# (c)
+Both sets of means and variances are identical when either calculating using density function or direct formula
+```{r, echo=FALSE}
+print("X~F(m=2,n=5) mean and variance using density function:")
+f1_mean
+f1_var
+
+print("X~F(m=2,n=5) mean and variance using direct formula:")
+f1_direct_mean
+f1_direct_var
+
+print("X~F(m=10,n=5) mean and variance using density function:")
+f2_mean
+f2_var
+
+print("X~F(m=10,n=5) mean and variance using direct formula:")
+f2_direct_mean
+f2_direct_var
+
+```
+

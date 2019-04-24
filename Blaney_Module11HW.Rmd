@@ -1,0 +1,157 @@
+---
+title: "Blaney_Module11HW"
+author: "Patrick Blaney"
+date: "March 30, 2019"
+output: pdf_document
+---
+
+# Data and packages required for completion of assignment
+```{r, message=FALSE}
+library(multtest)
+data(golub)
+gol.fac <- factor(golub.cl, levels = c(0, 1), labels = c('ALL', 'AML'))
+library(cluster)
+library(ISLR)
+```
+
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE}
+CCND3.data <- golub[1042, ]
+sl.hclust <- hclust(dist(CCND3.data, method = 'euclidean'), method = 'single')
+plot(sl.hclust, labels = gol.fac, main = 'Single Linkage Dendrogram')
+sl.clusters <- cutree(sl.hclust, k = 2)
+table(gol.fac, sl.clusters)
+wl.hclust <- hclust(dist(CCND3.data, method = 'euclidean'), method = 'ward.D2')
+plot(wl.hclust, labels = gol.fac, main = 'Wald Linkage Dendrogram')
+wl.clusters <- cutree(wl.hclust, k = 2)
+table(gol.fac, wl.clusters)
+```
+Based on the tables of each clustering method, the Ward linkage method appears to work better as there are only
+6 misclassifications, whereas the single linkage method has 10.
+
+# (b)
+```{r, echo=FALSE}
+kmean.cluster <- kmeans(CCND3.data, centers = 2)
+table(gol.fac, kmean.cluster$cluster)
+```
+
+# (c)
+The K-means clustering method appears to be similiar to the Ward linkage hierarchial method as they both produce only 6
+misclassifications. However, if simply comparing K-means vs any hierarchial method, I would say that the K-means method
+is the best for diagnosing the ALL/AML groups.
+
+# (d)
+```{r, echo=FALSE}
+initial.means <- kmean.cluster$centers[,1]
+n.sample <- length(CCND3.data)
+n.boot <- 1000
+boot.cluster.centers <- matrix(NA, nrow = n.boot, ncol = 2)
+for(i in 1:n.boot) {
+  data.sample <- CCND3.data[sample(1:n.sample, replace = TRUE)]
+  data.cluster <- kmeans(data.sample, centers = initial.means, nstart = 10)
+  boot.cluster.centers[i,] <- c(data.cluster$centers[,1])
+}
+bootstrap.cluster.means <- apply(boot.cluster.centers, 2, mean)
+print("Initial cluster means are")
+initial.means
+print("Bootstrap calculated cluster means are")
+bootstrap.cluster.means
+quantile(boot.cluster.centers[,1], c(0.025, 0.975))
+quantile(boot.cluster.centers[,2], c(0.025, 0.975))
+```
+The CI for the cluster means do overlap. The cluster mean for the ALL group was estimated with a very high
+level of accuracy. Both cluster means calculated via the bootstrap were very close to those produced by 
+the K-means cluster method.
+
+# (e)
+```{r, echo=FALSE}
+k.1 <-c(1:30)
+kmean.sse.1 <- rep(NA, length(k.1))
+for(i in k.1) {
+  kmean.sse.1[i] <- kmeans(CCND3.data, centers = i, nstart = 10)$tot.withinss
+}
+plot(k.1, kmean.sse.1, xaxt = 'n', type = 'o')
+axis(1, at = k.1, las = 2)
+```
+Based on the plot of the number of clusters K vs the calculated SSE by the K-means method, the optimal
+number of groups is either 2 or 3. Anymore than this is negligible as the plot shows the very minimal 
+change from 4 to 5 to 6 etc.
+
+
+# Problem 2
+
+# (a)
+```{r}
+oncogenes.indecies <- grep('oncogene', golub.gnames[,2])
+antigens.indecies <- grep('antigen', golub.gnames[,2])
+oncogenes.data <- golub[oncogenes.indecies, ]
+antigens.data <- golub[antigens.indecies, ]
+gene.data <- rbind(oncogenes.data, antigens.data)
+gene.true.cl <- c(rep(1, 42), rep(2, 75))
+gene.fac <- factor(gene.true.cl, levels = c(1,2), labels = c('oncogene', 'antigen'))
+```
+
+# (b)
+```{r, echo=FALSE}
+kmeans.gene.data <- kmeans(gene.data, centers = 2, nstart = 10)
+table(kmeans.gene.data$cluster)
+kmediods.gene.data <- pam(gene.data, k = 2)
+table(kmediods.gene.data$clustering)
+```
+The true count of oncogene clusters and antigen clusters are 42 and 75, respectively. The K-means
+method seems fairly successful in clustering the two groups appropriately as it produced clusters of 63 and
+54. However, the K-mediods method seems to have been quite accurate, producing clusters of
+78 and 39. This means seemingly only 3 genes were misclassified.
+
+# (c)
+```{r, echo=FALSE}
+n.boot <- 1000
+boot.cor <- matrix(NA, nrow = n.boot, ncol = 1)
+for(i in 1:n.boot) {
+  data.sample <- gene.data[sample(1:nrow(gene.data), replace = TRUE), ]
+  boot.cor[i,] <- cor(data.sample)[2,1]
+}
+mean(boot.cor)
+```
+
+
+# (d)
+```{r, echo=FALSE}
+sl.hclust.gene.data <- hclust(dist(gene.data, method = 'euclidean'), method = 'single')
+plot(sl.hclust.gene.data, labels = gene.fac, main = 'Single Linkage Dendrogram')
+```
+
+```{r, echo=FALSE}
+cl.hclust.gene.data <- hclust(dist(gene.data, method = 'euclidean'), method = 'complete')
+plot(cl.hclust.gene.data, labels = gene.fac, main = 'Complete Linkage Dendrogram')
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+nci.data <- NCI60$data
+nci.labs <- NCI60$labs
+k.3 <-c(1:30)
+kmean.sse.3 <- rep(NA, length(k.3))
+for(i in k.3) {
+  kmean.sse.3[i] <- kmeans(nci.data, centers = i, nstart = 10)$tot.withinss
+}
+plot(k.3, kmean.sse.3, xaxt = 'n', type = 'o')
+axis(1, at = k.3, las = 2)
+```
+Given that the curve on the plot of K vs SSE is nearly linear, the best estimation for the number of
+clusters should fall on the lower side of the middle, so between 12-15 groups.
+
+# (b)
+```{r, echo=FALSE}
+nci.k.medoids <- pam(as.dist(1 - cor(t(nci.data))), k = 7)
+data.frame(nci.k.medoids$clustering, nci.labs)
+```
+Based on the clustering produced by the K-mediods method, the cancer lines that are well identified are RENAL,
+LEUKEMIA, COLON, and MELANOMA. The BREAST cancer line seems to be spread across various groups. Based on the 
+grouping, OVARIAN is similar to RENAL, COLON, BREAST, and both types of repro cancer lines.

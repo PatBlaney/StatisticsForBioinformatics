@@ -1,0 +1,112 @@
+---
+title: "Blaney_Module4HW"
+author: "Patrick Blaney"
+date: "January 30, 2019"
+output: pdf_document
+---
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE}
+mean_1 <- 5
+sd_1 <- 3
+n_1 <- 5
+
+ex_1 <- mean_1
+print("E(X) is")
+ex_1
+
+sdx_1 <- sd_1 / sqrt(n_1)
+print("sd(X) is")
+sdx_1
+```
+
+# (b)
+```{r, echo=FALSE}
+print("Estimate of P(2<X<5.1) is")
+pnorm(5.1, mean = ex_1, sd = sdx_1) - pnorm(2, mean = ex_1, sd = sdx_1)
+```
+
+
+# Problem 2
+
+```{r, echo=FALSE}
+size_2 <- 20
+p_2 <- 0.7
+n_2 <- 100
+mean_2 <- size_2 * p_2
+var_2 <- (size_2 * p_2) * (1 - p_2)
+
+print("P(Y > 15) is")
+1 - pnorm(15, mean = mean_2, sd = sqrt(var_2) / sqrt(n_2))
+```
+
+
+# Problem 3
+
+```{r, echo=FALSE, message=FALSE}
+require(mvtnorm)
+x_mean_3 <- 9
+x_var_3 <- 3
+y_mean_3 <- 10
+y_var_3 <- 5
+covar_3 <- 2
+n_3 <- 50
+
+distr_3 <- rmvnorm(n_3, mean = c(x_mean_3, y_mean_3), sigma = matrix(c(x_var_3, covar_3, covar_3, x_var_3), nrow = 2))
+x_samples_3 <- distr_3[,1]
+y_samples_3 <- distr_3[,2]
+prob_3 <- mean(y_samples_3 - (x_samples_3 + 0.5)) + c(-1,1) * sqrt(var(y_samples_3 - (x_samples_3 + 0.5)) / n_3)
+print("The approximate probability of second gene exceeding sample mean")
+print("of first gene by more than 0.5 with 95% interaval is")
+prob_3
+```
+
+
+# Problem 4
+
+In order to achieve accurate Monte Carlo simulation, a random sample size of 100,000 will be utlized.
+```{r, echo=FALSE}
+x_chisq_4 <- rchisq(100000, df = 10)
+x_gamma_4 <- rgamma(100000, shape = 1, rate = 2)
+x_t_4 <- rt(100000, df = 3)
+
+y_4 <- (sqrt(x_chisq_4) * x_gamma_4) + 4 * (x_t_4) ^ 2
+y_mean_4 <- mean(y_4)
+print("The mean of Y using Monte Carlo simulation is")
+y_mean_4
+```
+Considering that the formulas for determining the mean of random variables used in more complex equations are out of scope, 
+the Monte Carlo estimation is sufficient. This is reenforced even more when you take the built in accuracy of a Monte Carlo 
+simulation. The approximate value given by this simulation will vary by about +-0.5 from 13.2. The simulation could only be 
+refined more by generating multiple sets of random samples and taking the mean of all those values.
+
+
+# Problem 5
+
+For the standard normal distribution, mean = 0 and standard deviation = 1,
+sample size n = 1000 for determining maxima.
+
+```{r, echo=FALSE}
+mean_5 <- 0
+sd_5 <- 1
+n_5 <- 1000
+an <- sqrt(2*log(n_5)) - 0.5*(log(log(n_5))+log(4*pi))*(2*log(n_5))^(-1/2)
+bn <- (2*log(n_5))^(-1/2)
+ev_dis_func <- function(x) exp(-x) * exp(-(exp(-x)))
+
+norm_maxima_matrix <- matrix(rnorm(n_5 * 1000, mean = mean_5, sd = sd_5), nrow = 1000)
+norm_maximas <- (apply(norm_maxima_matrix, 2, max) - an) / bn
+
+hist_plot_5 <- hist(norm_maximas, freq = FALSE, ylim = c(0, 0.4), xlim = c(-3, 6), 
+                    main = "Distribution of Normalized Maximas",
+                    xlab = "Normalized Maximas")
+curve(ev_dis_func(x), col = "red", add = T)
+curve(dnorm(x, mean = 0, sd = 1), col = "blue", add = T)
+```
+
+Based on the plot of the two curves, red being the extreme value function and blue being the standard normal distribution, the steps
+of maxima normalization will approach a high level of accuracy for high sample sizes. The histogram clearly shows that the range of
+maximas after normalization are approaching these ideal curves. 
+

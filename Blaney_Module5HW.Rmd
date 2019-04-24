@@ -1,0 +1,185 @@
+---
+title: "Blaney_Module5HW"
+author: "Patrick Blaney"
+date: "February 9, 2019"
+output: pdf_document
+---
+# Libraries needed for assignment
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(multtest)
+```
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE, out.width='65%'}
+include_graphics("Homework 5 Problem 1 Formulas.jpg")
+```
+
+# (b)
+```{r, echo=FALSE}
+n_1 <- 6
+random_obs <- c(1.636, 0.374, 3.015, 0.932, 0.179)
+lik_func_1 <- function(lambda) prod(dpois(random_obs, lambda = lambda))
+
+# Minimize negative likelihood function
+neg_lik_func_1 <- function(lambda) -lik_func_1(lambda)
+print("Numerical optimized value for MLE is")
+optim(par = 1, neg_lik_func_1)$par
+print("Analytical value for MLE is")
+(1/n_1)*(sum(random_obs))
+```
+
+
+# Problem 2
+
+# (a)
+```{r, echo=FALSE}
+sample_mean_2 <- 100.8
+print("The MoM estimator for a chi-square distribution is estimated by matching the sample mean X to the population mean m")
+sample_mean_2
+```
+
+# (b)
+```{r, echo=FALSE, out.width='50%'}
+include_graphics("Homework 5 Problem 2 Formula.jpg")
+n_2 <- 53
+s_dev <- 12.4
+alpha_2 <- 0.90
+chi_sq_2 <- qchisq((1 - alpha_2), df = n_2 - 1)
+print("A 90% lower CI is (")
+(s_dev * sqrt(n_2 - 1)) / sqrt(chi_sq_2)
+print(", INFINITY)")
+```
+
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+# Load Golub data, factorize the ALL or AML patient identifier, isolate ALL and AML data for Zyxin gene
+data("golub")
+gol.fac <- factor(golub.cl, levels = 0:1, labels = c("ALL", "AML"))
+all_zyxin_exp_data <- golub[2124, gol.fac=="ALL"]
+aml_zyxin_exp_data <- golub[2124, gol.fac=="AML"]
+
+# Sample the data 1000 times for accurate bootstarping mean
+n_all_3 <- length(all_zyxin_exp_data)
+n_aml_3 <- length(aml_zyxin_exp_data)
+boot_n_3 <- 1000
+
+# ALL patient mean and variance
+boot_all_mean <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  all_data_samples <- all_zyxin_exp_data[sample(1:n_all_3, replace = TRUE)]
+  boot_all_mean[i] <- mean(all_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression mean in ALL patients is")
+quantile(boot_all_mean, c(0.025, 0.975))
+
+boot_all_var <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  all_data_samples <- all_zyxin_exp_data[sample(1:n_all_3, replace = TRUE)]
+  boot_all_var[i] <- var(all_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression variance in ALL patients is")
+quantile(boot_all_var, c(0.025, 0.975))
+
+# AML patient mean and variance
+boot_aml_mean <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  aml_data_samples <- aml_zyxin_exp_data[sample(1:n_aml_3, replace = TRUE)]
+  boot_aml_mean[i] <- mean(aml_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression mean in AML patients is")
+quantile(boot_aml_mean, c(0.025, 0.975))
+
+boot_aml_var <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  aml_data_samples <- aml_zyxin_exp_data[sample(1:n_aml_3, replace = TRUE)]
+  boot_aml_var[i] <- var(aml_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression variance in AML patients is")
+quantile(boot_aml_var, c(0.025, 0.975))
+```
+
+# (b)
+For the parametric CI calculation for mean and variance, the t-interval formula will be used
+```{r, echo=FALSE}
+print("The t-interval 95% CI for Zyxin gene expression mean in ALL patients is")
+mean(all_zyxin_exp_data) + qt(c(0.025, 0.975), df = n_all_3 - 1) * (sd(all_zyxin_exp_data) / sqrt(n_all_3))
+print("The t-interval 95% CI for Zyxin gene expression variance in ALL patients is")
+var(all_zyxin_exp_data) + qt(c(0.025, 0.975), df = n_all_3 - 1) * (sd(all_zyxin_exp_data) ^ 2 / n_all_3)
+
+print("The t-interval 95% CI for Zyxin gene expression mean in AML patients is")
+mean(aml_zyxin_exp_data) + qt(c(0.025, 0.975), df = n_aml_3 - 1) * (sd(aml_zyxin_exp_data) / sqrt(n_aml_3))
+print("The t-interval 95% CI for Zyxin gene expression variance in AML patients is")
+var(aml_zyxin_exp_data) + qt(c(0.025, 0.975), df = n_aml_3 - 1) * (sd(aml_zyxin_exp_data) ^ 2 / n_aml_3)
+```
+
+# (c)
+```{r, echo=FALSE}
+# ALL patient median
+boot_all_med <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  all_data_samples <- all_zyxin_exp_data[sample(1:n_all_3, replace = TRUE)]
+  boot_all_med[i] <- median(all_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression median in ALL patients is")
+quantile(boot_all_med, c(0.025, 0.975))
+
+# AML patient median
+boot_aml_med <- rep(NA, boot_n_3)
+for (i in 1:boot_n_3) {
+  aml_data_samples <- aml_zyxin_exp_data[sample(1:n_aml_3, replace = TRUE)]
+  boot_aml_med[i] <- median(aml_data_samples)
+}
+print("The bootstrap 95% CI for Zyxin gene expression median in AML patients is")
+quantile(boot_aml_med, c(0.025, 0.975))
+```
+After reviewing the mean, variance, and median of both ALL and AML patients, it is clear that the Zyxin gene is differentially
+expressed in ALL and AML patients. Both the mean and median for ALL patients is very nearly always below zero whereas they are 
+faily positive for AML patients
+
+
+# Problem 4
+
+# (a)
+```{r}
+coverage_interval_func <- function(nsim, lam) {
+  n_4 <- 50
+  mean_converage <- rep(NA, nsim)
+  var_coverage <- rep(NA, nsim)
+  
+  for(i in 1:nsim) {
+    x_lam <- rpois(n_4, lambda = lam)
+    x_lam_mean <- mean(x_lam)
+    x_lam_var <- var(x_lam)
+    mean_lower_interval <- x_lam_mean + qpois(0.025, n_4) * sqrt(mean(rpois(n_4, lambda = lam)) / n_4)
+    mean_upperr_interval <- x_lam_mean + qpois(0.975, n_4) * sqrt(mean(rpois(n_4, lambda = lam)) / n_4)
+    mean_converage[i] <- (mean_lower_interval < lam) & (lam < mean_upperr_interval)
+    
+    var_lower_interal <- ((n_4 - 1) * x_lam_var) / qchisq(0.025, n_4 - 1)
+    var_upper_interal <- ((n_4 - 1) * x_lam_var) / qchisq(0.975, n_4 - 1)
+    var_coverage[i] <- (var_lower_interal < lam) & (lam < var_upper_interal)
+  }
+  print(paste(mean(mean_converage), mean(var_coverage)))
+}
+```
+
+# (b)
+```{r, echo=FALSE}
+n_sim_4 <- 1000
+print("Monte Carlo simulation where lambda = 0.1, probabilite values for mean and variance are")
+coverage_interval_func(n_sim_4, lam = 0.1)
+print("Monte Carlo simulation where lambda = 1, probabilite values for mean and variance are")
+coverage_interval_func(n_sim_4, lam = 1)
+print("Monte Carlo simulation where lambda = 10, probabilite values for mean and variance are")
+coverage_interval_func(n_sim_4, lam = 10)
+```
+
+# (c)
+Based on the probability values that were output by the mean of the two logical converage vectors, I am unsure if my function is
+as intended. I am confident that my formulas for the upper and lower sides of the CI are correct for both the mean and variance.
+The construction of this simulaiton seems much different than the previous versions and the example presented in script CImedian.

@@ -1,0 +1,111 @@
+---
+title: "Blaney_Module7HW"
+author: "Patrick Blaney"
+date: "February 19, 2019"
+output: pdf_document
+---
+
+# Data and package required for completion of assignment
+```{r, echo=FALSE}
+data(golub, package = "multtest")
+gol_fac <- factor(golub.cl, levels=0:1, labels = c("ALL", "AML"))
+gol_all <- golub[, gol_fac=="ALL"]
+gol_aml <- golub[, gol_fac=="AML"]
+data("UCBAdmissions")
+```
+
+
+# Problem 1
+
+# (a)
+```{r, echo=FALSE, warning=FALSE}
+mean_all <- apply(gol_all, 1, mean)
+mean_aml <- apply(gol_aml, 1, mean)
+mean_diff <- mean_all - mean_aml
+wilcox_pvalues <- apply(golub, 1, function(x) wilcox.test(x ~ gol_fac, alternative = "greater")$p.value)
+adj_wilcox_pvalues <- p.adjust(wilcox_pvalues, method = "fdr")
+count_pass <- sum(adj_wilcox_pvalues < 0.05)
+print("The total number of genes expressed higher in ALL group at a 0.05 FDR adjusted value is")
+count_pass
+```
+
+# (b)
+```{r, echo=FALSE}
+sorted_wilcox_pvalues <- order(adj_wilcox_pvalues, decreasing = FALSE)
+print("The top three genes with smallest adjusted p-value are")
+golub.gnames[394, 2]
+golub.gnames[1834, 2]
+golub.gnames[2939, 2]
+
+sorted_mean_diff <- order(mean_diff, decreasing = TRUE)
+print("The three genes with the largest difference between means in ALL vs AML groups are")
+golub.gnames[2065, 2]
+golub.gnames[1162, 2]
+golub.gnames[377, 2]
+```
+The genes with the smallest p-values do not correspond to the genes with the largest differences between means in
+the ALL vs AML groups.
+
+
+# Problem 2
+
+```{r, echo=FALSE}
+aml_sw_pvalue <- apply(gol_aml, 1, function(x) shapiro.test(x)$p.value)
+aml_sw_adj_pvalue <- p.adjust(aml_sw_pvalue, method = "fdr")
+gene_count_not_pass <- nrow(gol_aml) - sum(aml_sw_adj_pvalue > 0.05)
+gene_count_not_pass
+```
+this is the total number of genes that did not pass the Shapiro-Wilk test at level 0.05 after the p-values were adjusted
+using the FDR method.
+
+
+# Problem 3
+
+```{r, echo=FALSE}
+hoxa9_index <- grep("HOXA9 Homeo box A9", golub.gnames[,2])
+cd33_index <- grep("CD33",golub.gnames[,2])
+all_hoxa9 <- gol_all[hoxa9_index, ]
+all_cd33 <- gol_all[cd33_index, ]
+diff_exp_count <- sum( (all_hoxa9 - all_cd33) < 0)
+binom.test(diff_exp_count, 27, p = 0.5, alternative = "two.sided")
+```
+Based on a p-value of 0.005925, the null hypothesis that the genes were expressed differently can be rejected. 
+21 out of 27 pairs were expressed at the same level.
+
+
+# Problem 4
+
+```{r, echo=FALSE}
+ucb_pvalues <- rep(NA, 6)
+for(i in 1:6) {
+  ucb_pvalues[i] = chisq.test(UCBAdmissions[,,i])$p.value
+}
+mean_ucb_pvalue <- mean(ucb_pvalues)
+print("Mean chi-squared test p-value of all 6 sets of admission decision tables is")
+mean_ucb_pvalue
+print("The minimum p-value is")
+min(ucb_pvalues)
+print("The maximum p-value is")
+max(ucb_pvalues)
+```
+Based on the in min, max, and mean of the p-values derived from the chi-squareed test, the overall null hypothesis
+of independence cannot be rejected due to a high p-value. However, one of the six tables provided a p-value low enough to 
+reject the hypothesis.
+
+
+# Problem 5
+
+```{r, echo=FALSE}
+cd33_index <- grep("CD33",golub.gnames[,2])
+gol_cd33 <- golub[cd33_index, ]
+n <- length(gol_cd33)
+s_obs <- (var(gol_cd33[gol_fac=="ALL"]) ^ 2) / (var(gol_cd33[gol_fac=="AML"]) ^ 2)
+n_perm <- 2000
+s_perm <- rep(NA, n_perm)
+for(i in 1:n_perm) {
+  perm_data <- sample(gol_cd33, n, replace = FALSE)
+  s_perm[i] = (var(perm_data[gol_fac=="ALL"]) ^ 2) / (var(perm_data[gol_fac=="AML"]) ^ 2)
+}
+mean(s_perm <= s_obs)
+```
+The permutation test shows that the observed S test statistic is extreme as the p-value is below a 0.05 level.

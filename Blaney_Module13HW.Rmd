@@ -1,0 +1,78 @@
+---
+title: "Blaney_Module13HW"
+author: "Patrick Blaney"
+date: "April 16, 2019"
+output: pdf_document
+---
+
+# Data and packages required for completion of assignment
+```{r, message=FALSE}
+library(ALL)
+data(ALL)
+library(rpart)
+library(ROCR)
+library(caret)
+```
+
+# Problem 1
+
+# (a)
+```{r}
+IsB <- ALL$BT %in% c("B","B1","B2","B3","B4")
+```
+
+# (b)
+```{r, echo=FALSE}
+data.39327_at <- exprs(ALL)['39317_at',]
+data.38018_g_at <- exprs(ALL)['38018_g_at',]
+probe.data <- data.frame(data.39327_at, data.38018_g_at)
+probe.tree.class <- rpart(IsB ~ ., data = probe.data, method = 'class')
+tree.class.predict <- predict(probe.tree.class, type = 'class')
+table(tree.class.predict, IsB)
+probe.tree.prob <- rpart(IsB ~ ., data = probe.data)
+tree.prob.predict <- predict(probe.tree.prob)
+pred <- prediction(tree.prob.predict, IsB)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+```
+
+# (c)
+```{r, echo=FALSE}
+print('Misclassification rate is')
+(11+2)/(84+11+31+2)
+print('False negative rate is')
+11/(84+11)
+print('Specificity is')
+31/(31+2)
+print('AUC of ROC curve is')
+performance(pred, 'auc')@y.values
+```
+
+# (d)
+```{r, echo=FALSE}
+n <- nrow(probe.data)
+index <- 1:n
+k <- 10
+folds <- createFolds(index, k)
+tree.mcr.val <- rep(NA, k)
+for(i in 1:k) {
+  test.id <- folds[[i]]
+  train.data <- probe.data[-test.id,]
+  val.data <- probe.data[-test.id,]
+  train.fit <- rpart(IsB[-test.id] ~ ., data = train.data[-test.id], method = 'class')
+  pred.prob <- predict(train.fit, newdata = val.data[test.id,], type = 'class')
+  tree.mcr.val[i] <- mean(pred.prob != IsB[test.id])
+}
+mean.tree.mcr <- mean(tree.mcr.val)
+mean.tree.mcr
+```
+
+# (e)
+```{r}
+logistic.data <- cbind(data.39327_at, data.38018_g_at)
+logistic.reg <- glm(IsB ~ logistic.data, family = binomial(link = 'logit'))
+confint(logistic.reg, level = 0.8)
+print('80% CI for gene 39317_at is')
+c(-1.43, -0.60)
+```
+

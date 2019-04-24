@@ -1,0 +1,101 @@
+---
+title: "Blaney_Module1HW"
+author: "Patrick Blaney"
+date: "January 12, 2019"
+output: pdf_document
+---
+# Problem 1
+
+# (a) Numeric
+```{r, echo=FALSE}
+vec <- c(5, TRUE)
+class(vec)
+```
+
+# (b) A numeric vector with the values 2, 4, 4, 6
+```{r, echo=FALSE}
+x <- 1:4
+y <- 1:2
+x + y
+```
+
+# (c) The number 0 is returned
+```{r, echo=FALSE}
+fsin <- function(x) {
+  return(round(sin(pi * x)))
+}
+
+fsin(1)
+```
+
+# (d) A two by two matrix
+```{r, echo=FALSE}
+c(1, 2) %*% t(c(1, 2))
+```
+
+# (e) 10
+```{r, echo=FALSE}
+f <- function(x){
+  g <- function(y){
+    y + z
+  }
+  z <- 4
+  x + g(x)
+}
+
+z <- 15
+f(3)
+```
+
+# Problem 2
+
+```{r, echo=FALSE}
+sum_of_squares <- function(x) {
+  total_sum = 0
+  for(i in 1:x) {
+    total_sum = total_sum + (i ^ 2)
+  }
+  return(total_sum)
+}
+
+sum_of_squares(1000)
+```
+
+# Problem 3
+
+# (a)
+```{r, echo=FALSE}
+double_kth <- function(x) {
+  output_array <- c()
+  for(i in 1:x) {
+    double_k <- (i * 2)
+    output_array <- c(output_array, double_k)
+  }
+  return(output_array)
+}
+
+X <- double_kth(20)
+X
+```
+
+# (b)
+```{r, echo=FALSE}
+Y <- rep(0, 20)
+Y
+```
+
+# (c)
+```{r, echo=FALSE}
+for(i in 1:20) {
+  
+  if(i < 12) {
+    Y[i] <- cos(3 * i)
+  }
+  if(i >= 12) {
+    integrand <- function(x) sqrt(x)
+    integral <- integrate(integrand, lower = 0, upper = i)
+    Y[i] <- (integral$value)
+  }
+}
+Y
+```
